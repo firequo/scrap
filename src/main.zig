@@ -6,6 +6,7 @@ const strings = ArrayList(string);
 
 const State = struct {
     file_list: strings = undefined,
+    first_col_spaces: bool = false,
 
     pub fn init(state: *State, allocator: std.mem.Allocator) !void {
         var args = try std.process.argsWithAllocator(allocator);
@@ -18,6 +19,8 @@ const State = struct {
             if (arg_count != 1) {
                 if (std.mem.indexOf(u8, arg, ".txt")) |_| {
                     try state.add_to_fl(arg, allocator);
+                } else if (std.mem.indexOf(u8, arg, "-f")) |_| {
+                    state.first_col_spaces = true;
                 } else {
                     return error.UnknownArg;
                 }
@@ -41,8 +44,11 @@ pub fn main() !void {
 
     const total_mem_req = try gpa.create(usize);
     for (state.file_list.items) |in_file| {
-        const table = try read_sheet(gpa, in_file.items, total_mem_req);
+        var table = try read_sheet(gpa, in_file.items, total_mem_req);
         total_mem_req.* += table.items.len;
+        if (state.first_col_spaces) {
+            try fix_first_col(&table, gpa);
+        }
         var out_string = try table_to_string(table, gpa, total_mem_req.*);
         try fix_misshapen_percents(&out_string, gpa);
         try fix_space_after_newline(&out_string, gpa);
@@ -122,6 +128,29 @@ fn fix_space_after_newline(buf: *string, allocator: std.mem.Allocator) !void {
     }
     while (to_remove.popOrNull()) |i| {
         _ = buf.orderedRemove(i);
+    }
+}
+fn fix_first_col(table: *strings, allocator: std.mem.Allocator) !void {
+    var start_index: ?usize = 0;
+    var to_remove = ArrayList(usize).init(allocator);
+    defer to_remove.deinit();
+
+    for (0..table.items.len - 1) |i| {
+        const cur_str = table.items[i].items;
+        if (std.mem.indexOf(u8, cur_str, "\n")) |_| {
+            start_index = i + 1;
+        } else if (is_digit(cur_str[0])) {
+            start_index = null;
+        } else if (start_index) |si| {
+            if (si == i) continue;
+            const comma_index = std.mem.indexOf(u8, table.items[si].items, ",").?;
+            _ = table.items[si].orderedRemove(comma_index);
+            try table.items[si].appendSlice(table.items[i].items);
+            try to_remove.append(i);
+        }
+    }
+    while (to_remove.popOrNull()) |i| {
+        _ = table.orderedRemove(i);
     }
 }
 fn table_to_string(table: strings, allocator: std.mem.Allocator, width: usize) !string {
