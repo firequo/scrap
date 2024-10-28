@@ -174,10 +174,8 @@ fn is_digit(c: u8) bool {
 }
 fn write_out(buf: string, in_path: []const u8, allocator: std.mem.Allocator) !void {
     var out_path: []u8 = try allocator.alloc(u8, in_path.len);
-    if (std.mem.indexOf(u8, in_path, ".")) |i| {
-        @memcpy(out_path[0 .. i + 1], in_path[0 .. i + 1]);
-        @memcpy(out_path[i + 1 ..], "csv");
-    }
+    @memcpy(out_path[0 .. in_path.len - 3], in_path[0 .. in_path.len - 3]);
+    @memcpy(out_path[in_path.len - 3 ..], "csv");
     const out_file = try std.fs.cwd().createFile(out_path, .{});
     defer out_file.close();
     var writer = out_file.writer();
