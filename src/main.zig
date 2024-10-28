@@ -19,7 +19,7 @@ const State = struct {
             if (arg_count != 1) {
                 if (std.mem.indexOf(u8, arg, ".txt")) |_| {
                     try state.add_to_fl(arg, allocator);
-                } else if (std.mem.indexOf(u8, arg, "-f")) |_| {
+                } else if (std.mem.eql(u8, arg, "-f")) {
                     state.first_col_spaces = true;
                 } else {
                     return error.UnknownArg;
