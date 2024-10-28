@@ -48,4 +48,8 @@ if you have multiple txt files in the directory you can list them one by one or 
 
 this will cover all txts in the current directory
 
-\the program will make one new csv per text file
+the program will make one new csv per text file
+
+use the -f flag if the first column is text with multiple words (eg. Local Education Agency)
+with flag: Local Education Agency, 
+without flag: Local, Education, Agency,
