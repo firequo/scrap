@@ -65,6 +65,7 @@ fn read_sheet(allocator: std.mem.Allocator, in_path: []const u8, total_mem: *usi
     var total_size: usize = 0;
     var temp_col = string.init(allocator);
 
+    var windows: bool = false;
     while (true) {
         total_size += 1;
         const b = in_stream.readByte() catch {
@@ -75,9 +76,15 @@ fn read_sheet(allocator: std.mem.Allocator, in_path: []const u8, total_mem: *usi
                 var entry = string.init(allocator);
                 try entry.appendSlice(temp_col.items);
                 try entry.append(',');
+                if (windows and c == '\n') {
+                    try entry.append('\r');
+                }
                 try entry.append(c);
                 temp_col.clearRetainingCapacity();
                 try table.append(entry);
+            },
+            '\r' => {
+                windows = true;
             },
             ',' => {},
             else => |c| {
